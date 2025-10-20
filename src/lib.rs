@@ -107,9 +107,7 @@ where
 {
     /// Initialize the typed IO for pin `N`.
     ///
-    /// This configures the hardware direction using the `Input` direction by
-    /// default (maintained from the original implementation). If you want an
-    /// `Output` typed instance, construct one with the `Output` type parameter.
+    /// This configures the hardware direction using the marker types `Input` and `Output`.
     pub fn init() -> Self {
         let mut bank = <B as Bank<R>>::get_handle();
         <Input as Direction>::set_dir(&mut bank, N);
