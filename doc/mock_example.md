@@ -4,8 +4,14 @@ The following example shows a minimal, host-friendly mock implementation of
 the register block, a `GpioRegisters` implementation, and a `Bank` type. It
 is illustrative — adapt it to your hardware (use svd2rust types or volatile
 accessors for real MCUs).
+### Mock GPIO example
 
-```rust,no_run
+The following example shows a minimal, host-friendly mock implementation of
+the register block, a `GpioRegisters` implementation, and a `Bank` type. It
+is illustrative — adapt it to your hardware (use svd2rust types or volatile
+accessors for real MCUs).
+
+```rust
 use ayo::{Io, Level, Bank, IoDir, GpioRegisters, Input, Output, Interrupt};
 
 // A tiny mock of the register block. On real hardware this would be the
@@ -26,6 +32,7 @@ unsafe impl GpioRegisters for MyGpioRegs {
         // pointer back to a reference, provided alignment and initialization
         // are preserved and aliasing/exclusive access rules are respected.
         let regs = unsafe { &mut *ptr };
+
         match dir {
             IoDir::In => regs.dir &= !(1 << pin),
             IoDir::Out => regs.dir |= 1 << pin,
@@ -37,8 +44,10 @@ unsafe impl GpioRegisters for MyGpioRegs {
         // so converting it back to a reference is valid when alignment,
         // initialization and aliasing/exclusivity rules are met.
         let regs = unsafe { &mut *ptr };
+
         // naive mapping for illustration
-        regs.intcfg = (regs.intcfg & !(0b11 << (pin * 2))) | ((interrupt as u32) << (pin * 2));
+        regs.intcfg = (regs.intcfg & !(0b11 << (pin * 2)))
+            | ((interrupt as u32) << (pin * 2));
     }
 
     fn read(ptr: *const Self) -> u32 {
@@ -65,8 +74,14 @@ impl Bank<MyGpioRegs> for MyBank {
     fn addr() -> *mut MyGpioRegs {
         // In real hardware this would be a fixed peripheral address. For a
         // host mock you could point to a static instance.
-        static mut MOCK_REGS: MyGpioRegs = MyGpioRegs { input: 0, output: 0, dir: 0, intcfg: 0 };
-        unsafe { &mut MOCK_REGS }
+        static mut MOCK_REGS: MyGpioRegs = MyGpioRegs {
+            input: 0,
+            output: 0,
+            dir: 0,
+            intcfg: 0,
+        };
+
+        unsafe { &raw mut MOCK_REGS }
     }
 }
 
@@ -74,10 +89,20 @@ impl Bank<MyGpioRegs> for MyBank {
 let mut out: Io::<3, MyBank, MyGpioRegs, Output> = Io::init();
 out.set_high();
 
+// Assert that the output register bit for pin 3 was set by the driver.
+// We read the mock register directly via the bank address returned by
+// `MyBank::addr()`; this mirrors what real hardware would contain.
+assert_eq!(unsafe { (*MyBank::addr()).output & (1 << 3) }, 1 << 3);
+
+// Prepare the input register for pin 4 and verify the typed API reads it.
+unsafe { (*MyBank::addr()).input = 1 << 4; }
+
+// Usage
 let input: Io::<4, MyBank, MyGpioRegs, Input> = Io::init();
 let level = input.read();
-match level {
-    Level::High => { /* ... */ }
-    Level::Low => { /* ... */ }
-}
+
+// Final check: ensure the typed API reports the pin as `High`.
+// If this assertion fails, the example/driver did not set the mock input
+// register as expected.
+assert!(matches!(level, Level::High));
 ```
