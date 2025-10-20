@@ -39,5 +39,4 @@ an appropriate target and the platform's toolchain.
 
 ## License
 
-(This project currently has no license file in the repository. Add one if you
-intend to publish.)
+This project is licensed under the MIT License. 
