@@ -76,7 +76,7 @@ pub mod register {
         fn set_interrupt(ptr: *mut Self, pin: u32, interrupt: Interrupt);
 
         /// Read the input register(s) for the bank; returns a raw bitmask.
-        fn read(ptr: *mut Self) -> u32;
+        fn read(ptr: *const Self) -> u32;
 
         /// Write to the output register(s) using a bitmask.
         fn write(ptr: *mut Self, mask: u32);

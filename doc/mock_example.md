@@ -41,7 +41,7 @@ unsafe impl GpioRegisters for MyGpioRegs {
         regs.intcfg = (regs.intcfg & !(0b11 << (pin * 2))) | ((interrupt as u32) << (pin * 2));
     }
 
-    fn read(ptr: *mut Self) -> u32 {
+    fn read(ptr: *const Self) -> u32 {
         // SAFETY: the pointer originates from a Rust value; converting it to
         // a reference for reading is valid when the memory is initialized and
         // aligned. Use volatile accessors on real hardware as needed.
