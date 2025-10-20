@@ -16,10 +16,14 @@ use core::marker::PhantomData;
 pub use low::{Bank, io::Gpio, register::GpioRegisters};
 
 mod private {
+    use crate::DefaultState;
+
     // Sealed trait to prevent external implementations of `Direction`.
     pub trait Sealed {}
     impl Sealed for super::Input {}
-    impl Sealed for super::Output {}
+    impl<S: DefaultState> Sealed for super::Output<S> {}
+    impl Sealed for super::Active {}
+    impl Sealed for super::Inactive {}
 }
 
 use self::private::Sealed;
@@ -82,11 +86,29 @@ where
     bank: PhantomData<fn() -> B>,
     register: PhantomData<fn() -> R>,
 }
-
+pub trait DefaultState: Sealed {
+    fn default_state() -> Level;
+}
 /// Marker type for an input pin.
 pub struct Input;
+
+pub struct Active;
+impl DefaultState for Active {
+    fn default_state() -> Level {
+        Level::High
+    }
+}
+
+pub struct Inactive;
+impl DefaultState for Inactive {
+    fn default_state() -> Level {
+        Level::Low
+    }
+}
 /// Marker type for an output pin.
-pub struct Output;
+pub struct Output<S: DefaultState> {
+    default: PhantomData<fn() -> S>,
+}
 
 impl Direction for Input {
     fn init(gpio: &mut Gpio<impl GpioRegisters>, pin: u32) {
@@ -94,9 +116,10 @@ impl Direction for Input {
         gpio.set_interrupt(pin, Interrupt::Off);
     }
 }
-impl Direction for Output {
+impl<S: DefaultState> Direction for Output<S> {
     fn init(gpio: &mut Gpio<impl GpioRegisters>, pin: u32) {
         gpio.set_dir(pin, IoDir::Out);
+        gpio.write(pin, <S as DefaultState>::default_state());
     }
 }
 
@@ -137,7 +160,7 @@ where
     }
 }
 
-impl<B, R, const N: u32> Io<N, B, R, Output>
+impl<B, R, const N: u32, S: DefaultState> Io<N, B, R, Output<S>>
 where
     B: Bank<R>,
     R: GpioRegisters,

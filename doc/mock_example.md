@@ -6,7 +6,7 @@ is illustrative — adapt it to your hardware (use svd2rust types or volatile
 accessors for real MCUs).
 
 ```rust
-use ayo::{Io, Level, Bank, IoDir, GpioRegisters, Input, Output, Interrupt};
+use ayo::{Io, Level, Bank, IoDir, GpioRegisters, Input, Output, Interrupt, Active};
 
 // A tiny mock of the register block. On real hardware this would be the
 // svd2rust-generated struct with volatile register accessors.
@@ -80,13 +80,14 @@ impl Bank<MyGpioRegs> for MyBank {
 }
 
 // Usage
-let mut out: Io::<3, MyBank, MyGpioRegs, Output> = Io::init();
-out.set_high();
+let mut out: Io::<3, MyBank, MyGpioRegs, Output<Active>> = Io::init();
+assert_eq!(unsafe { (*MyBank::addr()).output & (1 << 3) }, 1 << 3);
+out.set_low();
 
-// Assert that the output register bit for pin 3 was set by the driver.
+// Assert that the output register bit for pin 3 was unset by the driver.
 // We read the mock register directly via the bank address returned by
 // `MyBank::addr()`; this mirrors what real hardware would contain.
-assert_eq!(unsafe { (*MyBank::addr()).output & (1 << 3) }, 1 << 3);
+assert_eq!(unsafe { (*MyBank::addr()).output & (1 << 3) }, 0);
 
 // Prepare the input register for pin 4 and verify the typed API reads it.
 unsafe { (*MyBank::addr()).input = 1 << 4; }
