@@ -30,7 +30,7 @@ use self::private::Sealed;
 /// crate and to allow the API to rely on the two known directions.
 pub trait Direction: Sealed {
     /// Set the hardware direction for `pin` on the provided GPIO bank handle.
-    fn set_dir(gpio: &mut Gpio<impl GpioRegisters>, pin: u32);
+    fn init(gpio: &mut Gpio<impl GpioRegisters>, pin: u32);
 }
 
 /// Interrupt configuration for a GPIO pin.
@@ -89,12 +89,13 @@ pub struct Input;
 pub struct Output;
 
 impl Direction for Input {
-    fn set_dir(gpio: &mut Gpio<impl GpioRegisters>, pin: u32) {
+    fn init(gpio: &mut Gpio<impl GpioRegisters>, pin: u32) {
         gpio.set_dir(pin, IoDir::In);
+        gpio.set_interrupt(pin, Interrupt::Off);
     }
 }
 impl Direction for Output {
-    fn set_dir(gpio: &mut Gpio<impl GpioRegisters>, pin: u32) {
+    fn init(gpio: &mut Gpio<impl GpioRegisters>, pin: u32) {
         gpio.set_dir(pin, IoDir::Out);
     }
 }
@@ -110,7 +111,7 @@ where
     /// This configures the hardware direction using the marker types `Input` and `Output`.
     pub fn init() -> Self {
         let mut bank = <B as Bank<R>>::get_handle();
-        <Input as Direction>::set_dir(&mut bank, N);
+        D::init(&mut bank, N);
         Self {
             dir: PhantomData,
             bank: PhantomData,
@@ -132,12 +133,7 @@ where
     /// Read the current logical level of the pin.
     pub fn read(&self) -> Level {
         let bank = <B as Bank<R>>::get_handle();
-        let value = bank.read();
-        if (value & (1 << N)) != 0 {
-            Level::High
-        } else {
-            Level::Low
-        }
+        bank.read(N)
     }
 }
 
@@ -149,11 +145,7 @@ where
     /// Write a logical level to the pin.
     fn write(&mut self, level: Level) {
         let mut bank = <B as Bank<R>>::get_handle();
-        let mask = match level {
-            Level::Low => u32::MAX ^ (1 << N),
-            Level::High => 1 << N,
-        };
-        bank.write(mask);
+        bank.write(N, level);
     }
 
     /// Drive the pin low.

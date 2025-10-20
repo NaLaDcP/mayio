@@ -91,7 +91,7 @@ pub mod register {
 /// dereferencing in a single place.
 pub mod io {
     use super::register::GpioRegisters;
-    use crate::{Interrupt, IoDir};
+    use crate::{Interrupt, IoDir, Level};
 
     /// Opaque handle to a GPIO register block.
     ///
@@ -130,13 +130,21 @@ pub mod io {
 
         /// Read the current input state bitmask for the bank.
         #[inline]
-        pub fn read(&self) -> u32 {
-            <R as GpioRegisters>::read(self.registers)
+        pub fn read(&self, pin: u32) -> Level {
+            if (<R as GpioRegisters>::read(self.registers) & (1 << pin)) != 0 {
+                Level::High
+            } else {
+                Level::Low
+            }
         }
 
         /// Write the provided `mask` to the bank output register(s).
         #[inline]
-        pub fn write(&mut self, mask: u32) {
+        pub fn write(&mut self, pin: u32, level: Level) {
+            let mask = match level {
+                Level::Low => u32::MAX ^ (1 << pin),
+                Level::High => 1 << pin,
+            };
             <R as GpioRegisters>::write(self.registers, mask);
         }
     }
