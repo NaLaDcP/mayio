@@ -1,6 +1,6 @@
 //! Ayo — typed GPIO abstractions for no_std environments.
 //!
-//! This crate provides a small, type-safe API to manage GPIO pins using
+//! This crate provides a small, dependance-free, type-safe API to manage GPIO pins using
 //! compile-time direction markers (Input/Output) and bank/register
 //! abstractions provided by the `low` module.
 //!
