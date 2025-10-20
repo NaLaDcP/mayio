@@ -4,12 +4,6 @@ The following example shows a minimal, host-friendly mock implementation of
 the register block, a `GpioRegisters` implementation, and a `Bank` type. It
 is illustrative — adapt it to your hardware (use svd2rust types or volatile
 accessors for real MCUs).
-### Mock GPIO example
-
-The following example shows a minimal, host-friendly mock implementation of
-the register block, a `GpioRegisters` implementation, and a `Bank` type. It
-is illustrative — adapt it to your hardware (use svd2rust types or volatile
-accessors for real MCUs).
 
 ```rust
 use ayo::{Io, Level, Bank, IoDir, GpioRegisters, Input, Output, Interrupt};
