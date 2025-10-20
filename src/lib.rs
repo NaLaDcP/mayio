@@ -5,76 +5,9 @@
 //! abstractions provided by the `low` module.
 //!
 //! Detailed example (mocked)
-//!
-//! The example below illustrates how a platform crate or a test harness can
-//! provide a register block and a `Bank` implementation. It is intended for
-//! documentation purposes and is marked `no_run` to avoid being executed as
-//! a doctest on targets that don't provide the required environment.
-//!
-//! ```rust,no_run
-//! use ayo::{Io, Level, Bank, IoDir, GpioRegisters, Input, Output, Interrupt};
-//!
-//! #[repr(C)]
-//! pub struct MyGpioRegs {
-//!     input: u32,
-//!     output: u32,
-//!     dir: u32,
-//!     intcfg: u32,
-//! }
-//!
-//! unsafe impl GpioRegisters for MyGpioRegs {
-//!     fn set_dir(ptr: *mut Self, pin: u32, dir: IoDir) {
-//!         // SAFETY: `ptr` must be a valid, properly aligned pointer to
-//!         // `MyGpioRegs`. The `Bank::addr()` contract guarantees this, so we
-//!         // may create a mutable reference here.
-//!         let regs = unsafe { &mut *ptr };
-//!         match dir {
-//!             IoDir::In => regs.dir &= !(1 << pin),
-//!             IoDir::Out => regs.dir |= 1 << pin,
-//!         }
-//!     }
-//!
-//!     fn set_interrupt(ptr: *mut Self, pin: u32, interrupt: Interrupt) {
-//!         // SAFETY: same contract as above — `ptr` must be valid and aligned.
-//!         let regs = unsafe { &mut *ptr };
-//!         regs.intcfg = (regs.intcfg & !(0b11 << (pin * 2))) | ((interrupt as u32) << (pin * 2));
-//!     }
-//!
-//!     fn read(ptr: *mut Self) -> u32 {
-//!         // SAFETY: reading from a raw pointer is unsafe; ensure `ptr` points
-//!         // to initialized memory representing the register block.
-//!         let regs = unsafe { &*ptr };
-//!         regs.input
-//!     }
-//!
-//!     fn write(ptr: *mut Self, mask: u32) {
-//!         // SAFETY: see notes above — `ptr` must be valid/aligned and the
-//!         // caller must ensure exclusive access when required by hardware.
-//!         let regs = unsafe { &mut *ptr };
-//!         regs.output = mask;
-//!     }
-//! }
-//!
-//! pub struct MyBank;
-//!
-//! impl Bank<MyGpioRegs> for MyBank {
-//!     fn addr() -> *mut MyGpioRegs {
-//!         static mut MOCK_REGS: MyGpioRegs = MyGpioRegs { input: 0, output: 0, dir: 0, intcfg: 0 };
-//!         unsafe { &mut MOCK_REGS }
-//!     }
-//! }
-//!
-//! // Usage
-//! let mut out: Io::<3, MyBank, MyGpioRegs, Output> = Io::init();
-//! out.set_high();
-//!
-//! let input: Io::<4, MyBank, MyGpioRegs, Input> = Io::init();
-//! let level = input.read();
-//! match level {
-//!     Level::High => { /* ... */ }
-//!     Level::Low => { /* ... */ }
-//! }
-//! ```
+//! The example below is included from an external markdown file and shows a
+//! mocked register block, `GpioRegisters` implementation and `Bank` type.
+#![doc = include_str!("../doc/mock_example.md")]
 #![no_std]
 
 mod low;

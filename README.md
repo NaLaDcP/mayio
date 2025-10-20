@@ -12,111 +12,16 @@ by the `low` module.
 - Type-level safety to prevent writing to input pins and similar mistakes.
 - Minimal runtime overhead.
 
-## Quick example
+### Mock GPIO example
 
-The API is generic over a bank type `B` and register block `R` provided by the
-platform-specific `low` implementation. The following is a conceptual example:
+The concrete mock example is maintained in `doc/mock_example.md` and is
+included in the crate documentation. To view the full example, open the
+file directly:
 
-```rust
-use ayo::{Io, Level, Input, Output};
+[Mock example](doc/mock_example.md)
 
-// Create a typed GPIO for pin 3 as an output.
-let mut out: Io::<3, MyBank, MyRegs, Output> = Io::init();
-out.set_high();
-
-// Create a typed GPIO for pin 4 as an input.
-let input: Io::<4, MyBank, MyRegs, Input> = Io::init();
-let level = input.read();
-match level {
-    Level::High => { /* ... */ }
-    Level::Low => { /* ... */ }
-}
-```
-
-Note: `MyBank` and `MyRegs` are platform-specific and must implement the
-traits re-exported from the `low` module (`Bank<R>` and `GpioRegisters`).
-
-### Concrete example (mocked)
-
-The following example shows a minimal, host-friendly mock implementation of
-the register block, a `GpioRegisters` implementation, and a `Bank` type. It
-is illustrative — adapt it to your hardware (use svd2rust types or volatile
-accessors for real MCUs).
-
-```rust
-use ayo::{Io, Level, Bank, IoDir, GpioRegisters, Input, Output, Interrupt};
-
-// A tiny mock of the register block. On real hardware this would be the
-// svd2rust-generated struct with volatile register accessors.
-#[repr(C)]
-pub struct MyGpioRegs {
-    input: u32,
-    output: u32,
-    dir: u32,
-    intcfg: u32,
-}
-
-unsafe impl GpioRegisters for MyGpioRegs {
-    fn set_dir(ptr: *mut Self, pin: u32, dir: IoDir) {
-        // SAFETY: caller must ensure `ptr` is valid and properly aligned for
-        // `MyGpioRegs`. This implementation uses `unsafe` to obtain a
-        // mutable reference from the raw pointer because the `Bank::addr()`
-        // contract guarantees the pointer points to a valid register block.
-        let regs = unsafe { &mut *ptr };
-        match dir {
-            IoDir::In => regs.dir &= !(1 << pin),
-            IoDir::Out => regs.dir |= 1 << pin,
-        }
-    }
-
-    fn set_interrupt(ptr: *mut Self, pin: u32, interrupt: Interrupt) {
-        // SAFETY: same contract as above — `ptr` must be a valid pointer to
-        // `MyGpioRegs` and properly aligned.
-        let regs = unsafe { &mut *ptr };
-        // naive mapping for illustration
-        regs.intcfg = (regs.intcfg & !(0b11 << (pin * 2))) | ((interrupt as u32) << (pin * 2));
-    }
-
-    fn read(ptr: *mut Self) -> u32 {
-        // SAFETY: reading from a raw pointer is unsafe; the implementor must
-        // ensure `ptr` points to initialized memory representing the register
-        // block.
-        let regs = unsafe { &*ptr };
-        regs.input
-    }
-
-    fn write(ptr: *mut Self, mask: u32) {
-        // SAFETY: see notes above — `ptr` must be valid/aligned and the
-        // caller must ensure exclusive access if required by the hardware.
-        let regs = unsafe { &mut *ptr };
-        regs.output = mask;
-    }
-}
-
-// Provide a `Bank` implementation that returns a (mock) base address.
-pub struct MyBank;
-
-impl Bank<MyGpioRegs> for MyBank {
-    fn addr() -> *mut MyGpioRegs {
-        // In real hardware this would be a fixed peripheral address. For a
-        // host mock you could point to a static instance.
-        static mut MOCK_REGS: MyGpioRegs = MyGpioRegs { input: 0, output: 0, dir: 0, intcfg: 0 };
-        unsafe { &mut MOCK_REGS }
-    }
-}
-
-// Usage
-let mut out: Io::<3, MyBank, MyGpioRegs, Output> = Io::init();
-out.set_high();
-
-let input: Io::<4, MyBank, MyGpioRegs, Input> = Io::init();
-let level = input.read();
-match level {
-    Level::High => { /* ... */ }
-    Level::Low => { /* ... */ }
-}
-```
-
+If you prefer the example embedded in this README, tell me and I can inline
+it here instead.
 
 ## API summary
 
