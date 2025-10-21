@@ -74,6 +74,7 @@ unsafe impl GpioRegisters for MyGpioRegs {
 pub struct MyBank;
 
 impl Bank<MyGpioRegs> for MyBank {
+    // Unused here
     const BASE_ADDRESS: usize = 0;
 
     fn addr() -> *mut MyGpioRegs {
@@ -90,27 +91,31 @@ impl Bank<MyGpioRegs> for MyBank {
     }
 }
 
+// Once Bank and GpioRegisters are implemented, a type alias is to be used 
+// as it is more ergonomic
 type Pin<const N: u32, D> = Io<MyBank, N, MyGpioRegs, D>;
 
 // Usage
-let mut out = Pin::<3, Output<High>>::init();
 // At init, output should not be set
+let mut out = Pin::<3, Output<High>>::init();
 assert_eq!(unsafe { (*MyBank::addr()).output & (1 << 3) }, 0);
-// Active
+
+// Activate 
 out.activate();
 assert_eq!(unsafe { (*MyBank::addr()).output & (1 << 3) }, 1 << 3);
-out.deactivate();
+
 
 // Assert that the output register bit for pin 3 was unset by the driver.
 // We read the mock register directly via the bank address returned by
 // `MyBank::addr()`; this mirrors what real hardware would contain.
+out.deactivate();
 assert_eq!(unsafe { (*MyBank::addr()).output & (1 << 3) }, 0);
 
 // Prepare the input register for pin 4 and verify the typed API reads it.
 unsafe { (*MyBank::addr()).input = 1 << 4; }
 
 // Usage
-let input: Io::<MyBank, 4, MyGpioRegs, Input> = Io::init();
+let input = Pin::<4, Input>::init();
 let level = input.read();
 
 // Final check: ensure the typed API reports the pin as `High`.
