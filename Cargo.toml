@@ -1,5 +1,5 @@
 [package]
-name = "mayo-hal"
+name = "mayio"
 version = "0.1.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
@@ -7,6 +7,6 @@ authors = ["NaLaDcP"]
 description = "A minimal no-std GPIO HAL for embedded systems"
 keywords = ["embedded", "gpio", "no-std", "hal"]
 readme = "README.md"
-repository = "https://github.com/NaLaDcP/mayo.git"
-documentation = "https://docs.rs/mayo-hal"
+repository = "https://github.com/NaLaDcP/mayio.git"
+documentation = "https://docs.rs/mayio"
 categories = ["embedded", "no-std", "no-std::no-alloc"]

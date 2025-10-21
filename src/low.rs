@@ -1,4 +1,4 @@
-//! Low-level GPIO building blocks used by the `mayo-hal` crate.
+//! Low-level GPIO building blocks used by the `mayio` crate.
 //!
 //! This module defines a small, platform-facing API that the higher-level
 //! typed abstractions use. It intentionally exposes a minimal, unsafe
@@ -59,7 +59,7 @@ pub trait Bank<R: register::GpioRegisters> {
 // ```
 
 /// Register-level trait describing the operations a GPIO register block
-/// must provide for `mayo-hal to operate.
+/// must provide for `mayio to operate.
 ///
 /// Platform-specific register types should implement `GpioRegisters` to
 /// expose a small set of operations used by the higher-level API. The

@@ -3,5 +3,5 @@
 version = 4
 
 [[package]]
-name = "mayo-hal"
+name = "mayio"
 version = "0.1.0"

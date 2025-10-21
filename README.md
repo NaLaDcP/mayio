@@ -1,6 +1,6 @@
-# mayo-hal
+# mayio
 
-mayo-hal is a small no_std Rust crate that provides typed GPIO abstractions.
+mayio is a small no_std Rust crate that provides typed GPIO abstractions.
 
 The crate offers a type-safe API for working with GPIO pins using compile-time
 direction markers (`Input` / `Output`) and a bank/register abstraction.
@@ -18,7 +18,7 @@ the register block, a `GpioRegisters` implementation, and a `Bank` type. It
 is illustrative — adapt it to your hardware.
 
 ```rust
-use mayo_hal:{Io, Level, Bank, IoDir, GpioRegisters, Input, Output, Interrupt, High};
+use mayio:{Io, Level, Bank, IoDir, GpioRegisters, Input, Output, Interrupt, High};
 
 // A tiny mock of the register block. On real hardware this would be the
 // svd2rust-generated struct with volatile register accessors.
