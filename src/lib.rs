@@ -1,12 +1,8 @@
 //! Ayo — typed GPIO abstractions for no_std environments.
 //!
-//! This crate provides a small, dependance-free, type-safe API to manage GPIO pins using
-//! compile-time direction markers (Input/Output) and provided bank/register
-//! abstractions.
-//!
-//! Detailed example (mocked)
-//! The example below is included from an external markdown file and shows a
-//! mocked register block, `GpioRegisters` implementation and `Bank` type.
+//! This crate provides a small, dependency-free, zero-cost, type-safe API to manage GPIO
+//! pins using compile-time direction markers (`Input`/`Output`) and
+//! platform `Bank`/`GpioRegisters` abstractions.
 #![doc = include_str!("../doc/mock_example.md")]
 #![no_std]
 
@@ -22,8 +18,8 @@ mod private {
     pub trait Sealed {}
     impl Sealed for super::Input {}
     impl<S: DefaultState> Sealed for super::Output<S> {}
-    impl Sealed for super::Active {}
-    impl Sealed for super::Inactive {}
+    impl Sealed for super::High {}
+    impl Sealed for super::Low {}
 }
 
 use self::private::Sealed;
@@ -34,7 +30,9 @@ use self::private::Sealed;
 /// crate and to allow the API to rely on the two known directions.
 pub trait Direction: Sealed {
     /// Set the hardware direction for `pin` on the provided GPIO bank handle.
-    fn init(gpio: &mut Gpio<impl GpioRegisters>, pin: u32);
+    fn init<R>(gpio: &mut Gpio<R>, pin: u32)
+    where
+        R: GpioRegisters;
 }
 
 /// Interrupt configuration for a GPIO pin.
@@ -86,38 +84,66 @@ where
     bank: PhantomData<fn() -> B>,
     register: PhantomData<fn() -> R>,
 }
+/// Trait implemented by types that provide a default output level for
+/// output marker types. The `Output<S>` marker uses this to determine the
+/// level to drive when the pin is initialized.
 pub trait DefaultState: Sealed {
     fn default_state() -> Level;
 }
+
 /// Marker type for an input pin.
+///
+/// Use `Io::<N, Bank, Regs, Input>` to obtain a typed input handle. Inputs
+/// are initialized with interrupts disabled by default and can be configured
+/// via `set_interrupt`.
 pub struct Input;
 
-pub struct Active;
-impl DefaultState for Active {
+/// Marker type representing a default output state to be high.
+///
+/// Use as `Output<High>` to request that the pin be driven high when
+/// initialized.
+pub struct High;
+impl DefaultState for High {
     fn default_state() -> Level {
         Level::High
     }
 }
 
-pub struct Inactive;
-impl DefaultState for Inactive {
+/// Marker type representing an default output state to be low.
+///
+/// Use as `Output<Low>` to request that the pin be driven low when
+/// initialized.
+pub struct Low;
+impl DefaultState for Low {
     fn default_state() -> Level {
         Level::Low
     }
 }
+
 /// Marker type for an output pin.
+///
+/// `Output<S>` carries a phantom type parameter `S` which implements
+/// `DefaultState` and selects the level the pin should assume when
+/// initialized. Example: `Io::<3, MyBank, MyRegs, Output<Active>>`.
 pub struct Output<S: DefaultState> {
     default: PhantomData<fn() -> S>,
 }
 
 impl Direction for Input {
-    fn init(gpio: &mut Gpio<impl GpioRegisters>, pin: u32) {
+    fn init<R>(gpio: &mut Gpio<R>, pin: u32)
+    where
+        R: GpioRegisters,
+    {
         gpio.set_dir(pin, IoDir::In);
         gpio.set_interrupt(pin, Interrupt::Off);
     }
 }
+
 impl<S: DefaultState> Direction for Output<S> {
-    fn init(gpio: &mut Gpio<impl GpioRegisters>, pin: u32) {
+    fn init<R>(gpio: &mut Gpio<R>, pin: u32)
+    where
+        R: GpioRegisters,
+    {
         gpio.set_dir(pin, IoDir::Out);
         gpio.write(pin, <S as DefaultState>::default_state());
     }

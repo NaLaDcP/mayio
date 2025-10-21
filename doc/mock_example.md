@@ -6,7 +6,7 @@ is illustrative — adapt it to your hardware (use svd2rust types or volatile
 accessors for real MCUs).
 
 ```rust
-use ayo::{Io, Level, Bank, IoDir, GpioRegisters, Input, Output, Interrupt, Active};
+use ayo::{Io, Level, Bank, IoDir, GpioRegisters, Input, Output, Interrupt, High};
 
 // A tiny mock of the register block. On real hardware this would be the
 // svd2rust-generated struct with volatile register accessors.
@@ -80,7 +80,7 @@ impl Bank<MyGpioRegs> for MyBank {
 }
 
 // Usage
-let mut out: Io::<3, MyBank, MyGpioRegs, Output<Active>> = Io::init();
+let mut out: Io::<3, MyBank, MyGpioRegs, Output<High>> = Io::init();
 assert_eq!(unsafe { (*MyBank::addr()).output & (1 << 3) }, 1 << 3);
 out.set_low();
 
