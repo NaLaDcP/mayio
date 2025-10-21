@@ -44,10 +44,8 @@ pub enum Interrupt {
     RisingEdge,
     /// Interrupt on falling edge. (Typo in original name preserved.)
     FallingEgdge,
-    /// Interrupt while the pin is low.
-    Low,
-    /// Interrupt while the pin is high.
-    High,
+    /// Intrupt on both edges.
+    AnyEdge,
 }
 
 /// Logical level of a GPIO pin.
