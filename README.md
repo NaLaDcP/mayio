@@ -1,6 +1,6 @@
-# Ayo
+# mayo
 
-Ayo is a small no_std Rust crate that provides typed GPIO abstractions.
+mayo is a small no_std Rust crate that provides typed GPIO abstractions.
 
 The crate offers a type-safe API for working with GPIO pins using compile-time
 direction markers (`Input` / `Output`) and a bank/register abstraction exposed

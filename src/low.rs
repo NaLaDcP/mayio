@@ -1,4 +1,4 @@
-//! Low-level GPIO building blocks used by the `ayo` crate.
+//! Low-level GPIO building blocks used by the `mayo` crate.
 //!
 //! This module defines a small, platform-facing API that the higher-level
 //! typed abstractions use. It intentionally exposes a minimal, unsafe
@@ -8,7 +8,7 @@
 //! The documentation below includes short examples showing how a platform
 //! crate might implement the required traits. The examples are illustrative
 //! and marked `no_run` to avoid being executed as doctests — they should be
-//! adapted to your MCU's actual register layout (for example an svd2rust
+//! adapted to your MCU's actual register lmayout (for example an svd2rust
 //! generated register block).
 //!
 //! Safety notes:
@@ -61,7 +61,7 @@ pub trait Bank<R: register::GpioRegisters> {
 // ```
 
 /// Register-level trait describing the operations a GPIO register block
-/// must provide for `ayo` to operate.
+/// must provide for `mayo` to operate.
 ///
 /// Platform-specific register types should implement `GpioRegisters` to
 /// expose a small set of operations used by the higher-level API. The

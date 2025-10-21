@@ -6,7 +6,7 @@ is illustrative — adapt it to your hardware (use svd2rust types or volatile
 accessors for real MCUs).
 
 ```rust
-use ayo::{Io, Level, Bank, IoDir, GpioRegisters, Input, Output, Interrupt, High};
+use mayo::{Io, Level, Bank, IoDir, GpioRegisters, Input, Output, Interrupt, High};
 
 // A tiny mock of the register block. On real hardware this would be the
 // svd2rust-generated struct with volatile register accessors.
