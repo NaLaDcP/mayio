@@ -90,6 +90,9 @@ pub mod register {
 
         /// Write to the output register(s) using a bitmask.
         fn write(ptr: *mut Self, mask: u32);
+
+        /// Read whether an interrupt is pending for the given pin and acknoledge it.
+        fn interrupt_pending(ptr: *mut Self, pin: u32) -> bool;
     }
 }
 
@@ -163,6 +166,11 @@ pub mod io {
                 Level::High => 1 << pin,
             };
             <R as GpioRegisters>::write(self.registers, mask);
+        }
+
+        /// Read whether an interrupt is pending for the given pin and acknowledge it.
+        pub fn interrupt_pending(&mut self, pin: u32) -> bool {
+            <R as GpioRegisters>::interrupt_pending(self.registers, pin)
         }
     }
 }

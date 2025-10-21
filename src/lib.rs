@@ -202,6 +202,12 @@ where
         let bank = <B as Bank<R>>::get_handle();
         bank.read(N)
     }
+
+    /// Read whether an interrupt is pending for this pin.
+    pub fn interrupt_pending(&self) -> bool {
+        let mut bank = <B as Bank<R>>::get_handle();
+        bank.interrupt_pending(N)
+    }
 }
 
 impl<B, const N: u32, R, S: ActiveState> Io<B, N, R, Output<S>>

@@ -64,6 +64,10 @@ unsafe impl GpioRegisters for MyGpioRegs {
         let regs = unsafe { &mut *ptr };
         regs.output = mask;
     }
+
+    fn interrupt_pending(ptr: *mut Self, pin: u32) -> bool {
+        false
+    }
 }
 
 // Provide a `Bank` implementation that returns a (mock) base address.
