@@ -1,9 +1,9 @@
 [package]
-name = "mayo"
+name = "mayo-hal"
 version = "0.1.0"
 edition = "2024"
-license = "MIT"
-authors = ["NalaDracip <nala.dracip@gmail.com>"]
+license = "MIT OR Apache-2.0"
+authors = ["NaLaDcP"]
 description = "A minimal no-std GPIO HAL for embedded systems"
 keywords = ["embedded", "gpio", "microcontroller", "soc", "no-std", "hal"]
 categories = ["embedded", "device-drivers", "no-std"]
