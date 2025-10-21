@@ -70,6 +70,8 @@ unsafe impl GpioRegisters for MyGpioRegs {
 pub struct MyBank;
 
 impl Bank<MyGpioRegs> for MyBank {
+    const BASE_ADDRESS: usize = 0;
+
     fn addr() -> *mut MyGpioRegs {
         // In real hardware this would be a fixed peripheral address. For a
         // host mock you could point to a static instance.
@@ -85,7 +87,7 @@ impl Bank<MyGpioRegs> for MyBank {
 }
 
 // Usage
-let mut out: Io::<3, MyBank, MyGpioRegs, Output<High>> = Io::init();
+let mut out: Io::< MyBank, 3, MyGpioRegs, Output<High>> = Io::init();
 // At init, output should not be set
 assert_eq!(unsafe { (*MyBank::addr()).output & (1 << 3) }, 0);
 // Active
@@ -102,7 +104,7 @@ assert_eq!(unsafe { (*MyBank::addr()).output & (1 << 3) }, 0);
 unsafe { (*MyBank::addr()).input = 1 << 4; }
 
 // Usage
-let input: Io::<4, MyBank, MyGpioRegs, Input> = Io::init();
+let input: Io::<MyBank, 4, MyGpioRegs, Input> = Io::init();
 let level = input.read();
 
 // Final check: ensure the typed API reports the pin as `High`.

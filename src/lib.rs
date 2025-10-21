@@ -88,7 +88,7 @@ pub enum IoDir {
 /// - `B`: bank type which implements `Bank<R>`.
 /// - `R`: register block implementing `GpioRegisters`.
 /// - `D`: direction marker type (`Input` or `Output`).
-pub struct Io<const N: u32, B, R, D>
+pub struct Io<B, const N: u32, R, D>
 where
     B: Bank<R>,
     R: GpioRegisters,
@@ -165,7 +165,7 @@ impl<S: ActiveState> Direction for Output<S> {
     }
 }
 
-impl<B, R, const N: u32, D> Io<N, B, R, D>
+impl<B, const N: u32, R, D> Io<B, N, R, D>
 where
     B: Bank<R>,
     R: GpioRegisters,
@@ -184,7 +184,7 @@ where
         }
     }
 }
-impl<B, R, const N: u32> Io<N, B, R, Input>
+impl<B, const N: u32, R> Io<B, N, R, Input>
 where
     B: Bank<R>,
     R: GpioRegisters,
@@ -202,7 +202,7 @@ where
     }
 }
 
-impl<B, R, const N: u32, S: ActiveState> Io<N, B, R, Output<S>>
+impl<B, const N: u32, R, S: ActiveState> Io<B, N, R, Output<S>>
 where
     B: Bank<R>,
     R: GpioRegisters,
