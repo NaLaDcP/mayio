@@ -5,5 +5,5 @@ edition = "2024"
 license = "MIT OR Apache-2.0"
 authors = ["NaLaDcP"]
 description = "A minimal no-std GPIO HAL for embedded systems"
-keywords = ["embedded", "gpio", "microcontroller", "soc", "no-std", "hal"]
-categories = ["embedded", "device-drivers", "no-std"]
+keywords = ["embedded", "gpio", "no-std", "hal"]
+categories = ["embedded", "drivers", "no-std"]
