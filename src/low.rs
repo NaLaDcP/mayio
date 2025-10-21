@@ -109,6 +109,7 @@ pub mod io {
     /// Callers must ensure the pointer is valid for the lifetime of the
     /// operations. All methods on `Gpio` use `unsafe` internally to access
     /// the pointer and forward to the `GpioRegisters` implementation.
+    #[doc(hidden)]
     pub struct Gpio<R: GpioRegisters> {
         registers: *mut R,
     }

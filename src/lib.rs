@@ -28,6 +28,7 @@ use self::private::Sealed;
 ///
 /// This trait is sealed to keep direction implementations local to the
 /// crate and to allow the API to rely on the two known directions.
+#[doc(hidden)]
 pub trait Direction: Sealed {
     /// Set the hardware direction for `pin` on the provided GPIO bank handle.
     fn init<R>(gpio: &mut Gpio<R>, pin: u32)
@@ -100,6 +101,7 @@ where
 /// Trait implemented by types that provide a default output level for
 /// output marker types. The `Output<S>` marker uses this to determine the
 /// level to drive when the pin is initialized.
+#[doc(hidden)]
 pub trait ActiveState: Sealed {
     fn active_state() -> Level;
 }
