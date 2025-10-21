@@ -33,6 +33,11 @@ unsafe impl GpioRegisters for MyGpioRegs {
         }
     }
 
+    fn set_active_state(ptr: *mut Self, pin: u32, level: Level) {
+        /// Nothing to do
+        ()
+    }
+
     fn set_interrupt(ptr: *mut Self, pin: u32, interrupt: Interrupt) {
         // SAFETY: same as above — the pointer was created from a Rust value
         // so converting it back to a reference is valid when alignment,
@@ -81,8 +86,12 @@ impl Bank<MyGpioRegs> for MyBank {
 
 // Usage
 let mut out: Io::<3, MyBank, MyGpioRegs, Output<High>> = Io::init();
+// At init, output should not be set
+assert_eq!(unsafe { (*MyBank::addr()).output & (1 << 3) }, 0);
+// Active
+out.activate();
 assert_eq!(unsafe { (*MyBank::addr()).output & (1 << 3) }, 1 << 3);
-out.set_low();
+out.deactivate();
 
 // Assert that the output register bit for pin 3 was unset by the driver.
 // We read the mock register directly via the bank address returned by

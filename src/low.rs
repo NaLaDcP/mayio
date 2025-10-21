@@ -69,8 +69,11 @@ pub mod register {
     /// side effects on the hardware registers. The trait is intentionally
     /// small to make it easy to adapt to different MCUs or SoCs.
     pub unsafe trait GpioRegisters {
-        /// Set the direction of a single pin.
+        /// Configure the direction of a single pin.
         fn set_dir(ptr: *mut Self, pin: u32, dir: IoDir);
+
+        /// Configure the active state for a single pin.
+        fn set_active_state(ptr: *mut Self, pin: u32, active_state: crate::Level);
 
         /// Configure the interrupt mode for a single pin.
         fn set_interrupt(ptr: *mut Self, pin: u32, interrupt: Interrupt);
@@ -120,6 +123,12 @@ pub mod io {
         #[inline]
         pub fn set_dir(&mut self, pin: u32, dir: IoDir) {
             <R as GpioRegisters>::set_dir(self.registers, pin, dir);
+        }
+
+        /// Configure the active state for `pin`.
+        #[inline]
+        pub fn set_active_state(&mut self, pin: u32, active_state: Level) {
+            <R as GpioRegisters>::set_active_state(self.registers, pin, active_state);
         }
 
         /// Configure the interrupt mode for `pin`.

@@ -8,16 +8,16 @@
 
 mod low;
 
-use core::marker::PhantomData;
+use core::{marker::PhantomData, ops::Not};
 pub use low::{Bank, io::Gpio, register::GpioRegisters};
 
 mod private {
-    use crate::DefaultState;
+    use crate::ActiveState;
 
     // Sealed trait to prevent external implementations of `Direction`.
     pub trait Sealed {}
     impl Sealed for super::Input {}
-    impl<S: DefaultState> Sealed for super::Output<S> {}
+    impl<S: ActiveState> Sealed for super::Output<S> {}
     impl Sealed for super::High {}
     impl Sealed for super::Low {}
 }
@@ -50,11 +50,24 @@ pub enum Interrupt {
 }
 
 /// Logical level of a GPIO pin.
+#[derive(Copy, Clone, Debug)]
 pub enum Level {
     /// Logical low / 0.
     Low,
     /// Logical high / 1.
     High,
+}
+
+/// Invert a `Level`.
+impl Not for Level {
+    type Output = Level;
+
+    fn not(self) -> Self::Output {
+        match self {
+            Level::Low => Level::High,
+            Level::High => Level::Low,
+        }
+    }
 }
 
 /// Direction for a single GPIO pin.
@@ -87,8 +100,8 @@ where
 /// Trait implemented by types that provide a default output level for
 /// output marker types. The `Output<S>` marker uses this to determine the
 /// level to drive when the pin is initialized.
-pub trait DefaultState: Sealed {
-    fn default_state() -> Level;
+pub trait ActiveState: Sealed {
+    fn active_state() -> Level;
 }
 
 /// Marker type for an input pin.
@@ -103,8 +116,8 @@ pub struct Input;
 /// Use as `Output<High>` to request that the pin be driven high when
 /// initialized.
 pub struct High;
-impl DefaultState for High {
-    fn default_state() -> Level {
+impl ActiveState for High {
+    fn active_state() -> Level {
         Level::High
     }
 }
@@ -114,8 +127,8 @@ impl DefaultState for High {
 /// Use as `Output<Low>` to request that the pin be driven low when
 /// initialized.
 pub struct Low;
-impl DefaultState for Low {
-    fn default_state() -> Level {
+impl ActiveState for Low {
+    fn active_state() -> Level {
         Level::Low
     }
 }
@@ -123,9 +136,9 @@ impl DefaultState for Low {
 /// Marker type for an output pin.
 ///
 /// `Output<S>` carries a phantom type parameter `S` which implements
-/// `DefaultState` and selects the level the pin should assume when
+/// `ActiveState` and selects the level the pin should assume when
 /// initialized. Example: `Io::<3, MyBank, MyRegs, Output<Active>>`.
-pub struct Output<S: DefaultState> {
+pub struct Output<S: ActiveState> {
     default: PhantomData<fn() -> S>,
 }
 
@@ -139,13 +152,16 @@ impl Direction for Input {
     }
 }
 
-impl<S: DefaultState> Direction for Output<S> {
+impl<S: ActiveState> Direction for Output<S> {
     fn init<R>(gpio: &mut Gpio<R>, pin: u32)
     where
         R: GpioRegisters,
     {
+        let active_state = S::active_state();
         gpio.set_dir(pin, IoDir::Out);
-        gpio.write(pin, <S as DefaultState>::default_state());
+        gpio.set_active_state(pin, active_state);
+        // Ensure the pin starts low regardless of active state
+        gpio.write(pin, Level::Low);
     }
 }
 
@@ -186,7 +202,7 @@ where
     }
 }
 
-impl<B, R, const N: u32, S: DefaultState> Io<N, B, R, Output<S>>
+impl<B, R, const N: u32, S: ActiveState> Io<N, B, R, Output<S>>
 where
     B: Bank<R>,
     R: GpioRegisters,
@@ -197,15 +213,15 @@ where
         bank.write(N, level);
     }
 
-    /// Drive the pin low.
+    /// Activate the pin (drive to active state).
     #[inline]
-    pub fn set_low(&mut self) {
-        self.write(Level::Low);
+    pub fn activate(&mut self) {
+        self.write(S::active_state());
     }
 
-    /// Drive the pin high.
+    /// Deactivate the pin (drive to inactive state).
     #[inline]
-    pub fn set_high(&mut self) {
-        self.write(Level::High);
+    pub fn deactivate(&mut self) {
+        self.write(!S::active_state());
     }
 }
