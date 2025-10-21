@@ -28,6 +28,9 @@
 /// physical address of the registers and a convenience `get_handle()` that
 /// returns an `io::Gpio<R>` wrapper around the register pointer.
 pub trait Bank<R: register::GpioRegisters> {
+    /// Base physical address of the GPIO bank registers.
+    const BASE_ADDRESS: usize;
+
     /// Return a new `Gpio` handle pointing at the bank's register block.
     ///
     /// This default implementation calls `Self::addr()` and constructs the
@@ -38,18 +41,22 @@ pub trait Bank<R: register::GpioRegisters> {
     }
 
     /// Return the base pointer to the register block for this bank.
-    fn addr() -> *mut R;
+    fn addr() -> *mut R {
+        Self::BASE_ADDRESS as *mut R
+    }
 }
 
 // Example: providing a `Bank` for `MyGpioRegs`.
+//
+// The `Bank` trait exposes a `const BASE_ADDRESS` and provides a
+// default `addr()` implementation that converts the constant to a pointer.
+// Platform crates can implement the bank by defining the `BASE_ADDRESS`.
 //
 // ```no_run
 // pub struct MyBank;
 //
 // impl Bank<MyGpioRegs> for MyBank {
-//     fn addr() -> *mut MyGpioRegs {
-//         0x4002_0000 as *mut MyGpioRegs // platform-specific base address
-//     }
+//     const BASE_ADDRESS: usize = 0x4002_0000; // platform-specific base address
 // }
 // ```
 
