@@ -90,8 +90,10 @@ impl Bank<MyGpioRegs> for MyBank {
     }
 }
 
+type Pin<const N: u32, D> = Io<MyBank, N, MyGpioRegs, D>;
+
 // Usage
-let mut out: Io::< MyBank, 3, MyGpioRegs, Output<High>> = Io::init();
+let mut out = Pin::<3, Output<High>>::init();
 // At init, output should not be set
 assert_eq!(unsafe { (*MyBank::addr()).output & (1 << 3) }, 0);
 // Active
