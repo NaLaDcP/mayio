@@ -6,4 +6,4 @@ license = "MIT OR Apache-2.0"
 authors = ["NaLaDcP"]
 description = "A minimal no-std GPIO HAL for embedded systems"
 keywords = ["embedded", "gpio", "no-std", "hal"]
-categories = ["embedded", "drivers", "no-std"]
+categories = ["embedded", "no-std", "no-std::no-alloc"]
