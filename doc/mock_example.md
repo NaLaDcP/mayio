@@ -5,7 +5,7 @@ the register block, a `GpioRegisters` implementation, and a `Bank` type. It
 is illustrative — adapt it to your hardware.
 
 ```rust
-use mayo::{Io, Level, Bank, IoDir, GpioRegisters, Input, Output, Interrupt, High};
+use mayo_hal::{Io, Level, Bank, IoDir, GpioRegisters, Input, Output, Interrupt, High};
 
 // A tiny mock of the register block. On real hardware this would be the
 // svd2rust-generated struct with volatile register accessors.

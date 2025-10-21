@@ -1,4 +1,4 @@
-//! `mayo` — typed GPIO abstractions for no_std environments.
+//! `mayo-hal — typed GPIO abstractions for no_std environments.
 //!
 //! This crate provides a small, dependency-free, zero-cost, type-safe API to manage GPIO
 //! pins using compile-time direction markers (`Input`/`Output`) and
