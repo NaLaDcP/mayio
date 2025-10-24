@@ -1,4 +1,4 @@
-//! `mayio — typed GPIO abstractions for no_std environments.
+//! `mayio` — typed GPIO abstractions for no_std environments.
 //!
 //! This crate provides a small, dependency-free, zero-cost, type-safe API to manage GPIO
 //! pins using compile-time direction markers (`Input`/`Output`) and
@@ -12,14 +12,14 @@ use core::{marker::PhantomData, ops::Not};
 pub use low::{Bank, io::Gpio, register::GpioRegisters};
 
 mod private {
-    use crate::ActiveState;
+    use crate::InputMode;
 
     // Sealed trait to prevent external implementations of `Direction`.
     pub trait Sealed {}
     impl Sealed for super::Input {}
-    impl<S: ActiveState> Sealed for super::Output<S> {}
-    impl Sealed for super::High {}
-    impl Sealed for super::Low {}
+    impl<Mode: InputMode> Sealed for super::Output<Mode> {}
+    impl Sealed for super::PushPull {}
+    impl Sealed for super::OpenDrain {}
 }
 
 use self::private::Sealed;
@@ -44,8 +44,8 @@ pub enum Interrupt {
     RisingEdge,
     /// Interrupt on falling edge. (Typo in original name preserved.)
     FallingEgdge,
-    /// Intrupt on both edges.
-    AnyEdge,
+    /// Interrupt on both edges.
+    BothEdges,
 }
 
 /// Logical level of a GPIO pin.
@@ -100,7 +100,7 @@ where
 /// output marker types. The `Output<S>` marker uses this to determine the
 /// level to drive when the pin is initialized.
 #[doc(hidden)]
-pub trait ActiveState: Sealed {
+pub trait InputMode: Sealed {
     fn active_state() -> Level;
 }
 
@@ -111,23 +111,23 @@ pub trait ActiveState: Sealed {
 /// via `set_interrupt`.
 pub struct Input;
 
-/// Marker type representing a default output state to be high.
+/// Marker type representing an output configured as push-pull.
 ///
-/// Use as `Output<High>` to request that the pin be driven high when
-/// initialized.
-pub struct High;
-impl ActiveState for High {
+/// Use as `Output<PushPull>` to request that the pin be driven high when
+/// active.
+pub struct PushPull;
+impl InputMode for PushPull {
     fn active_state() -> Level {
         Level::High
     }
 }
 
-/// Marker type representing an default output state to be low.
+/// Marker type representing an output configured as open-drain.
 ///
-/// Use as `Output<Low>` to request that the pin be driven low when
-/// initialized.
-pub struct Low;
-impl ActiveState for Low {
+/// Use as `Output<OpenDrain>` to request that the pin be driven low when
+/// active.
+pub struct OpenDrain;
+impl InputMode for OpenDrain {
     fn active_state() -> Level {
         Level::Low
     }
@@ -136,10 +136,10 @@ impl ActiveState for Low {
 /// Marker type for an output pin.
 ///
 /// `Output<S>` carries a phantom type parameter `S` which implements
-/// `ActiveState` and selects the level the pin should assume when
+/// `InputMode` and selects the level the pin should assume when
 /// initialized. Example: `Io::<3, MyBank, MyRegs, Output<Active>>`.
-pub struct Output<S: ActiveState> {
-    default: PhantomData<fn() -> S>,
+pub struct Output<Mode: InputMode> {
+    default: PhantomData<fn() -> Mode>,
 }
 
 impl Direction for Input {
@@ -152,12 +152,12 @@ impl Direction for Input {
     }
 }
 
-impl<S: ActiveState> Direction for Output<S> {
+impl<Mode: InputMode> Direction for Output<Mode> {
     fn init<R>(gpio: &mut Gpio<R>, pin: u32)
     where
         R: GpioRegisters,
     {
-        let active_state = S::active_state();
+        let active_state = Mode::active_state();
         gpio.set_dir(pin, IoDir::Out);
         gpio.set_active_state(pin, active_state);
         // Ensure the pin starts low regardless of active state
@@ -208,7 +208,7 @@ where
     }
 }
 
-impl<B, const N: u32, R, S: ActiveState> Io<B, N, R, Output<S>>
+impl<B, const N: u32, R, Mode: InputMode> Io<B, N, R, Output<Mode>>
 where
     B: Bank<R>,
     R: GpioRegisters,
@@ -222,12 +222,12 @@ where
     /// Activate the pin (drive to active state).
     #[inline]
     pub fn activate(&mut self) {
-        self.write(S::active_state());
+        self.write(Mode::active_state());
     }
 
     /// Deactivate the pin (drive to inactive state).
     #[inline]
     pub fn deactivate(&mut self) {
-        self.write(!S::active_state());
+        self.write(!Mode::active_state());
     }
 }

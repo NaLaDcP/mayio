@@ -5,16 +5,15 @@ the register block, a `GpioRegisters` implementation, and a `Bank` type. It
 is illustrative — adapt it to your hardware.
 
 ```rust
-use mayio::{Io, Level, Bank, IoDir, GpioRegisters, Input, Output, Interrupt, High};
+use mayio::{Io, Level, Bank, IoDir, GpioRegisters, Input, Output, Interrupt, PushPull};
 
-// A tiny mock of the register block. On real hardware this would be the
-// svd2rust-generated struct with volatile register accessors.
+// A tiny mock of the register block. On real hardware this would be 
+// a struct with volatile register accessors.
 #[repr(C)]
 pub struct MyGpioRegs {
     input: u32,
     output: u32,
     dir: u32,
-    intcfg: u32,
 }
 
 unsafe impl GpioRegisters for MyGpioRegs {
@@ -38,30 +37,33 @@ unsafe impl GpioRegisters for MyGpioRegs {
     }
 
     fn set_interrupt(ptr: *mut Self, pin: u32, interrupt: Interrupt) {
-        // SAFETY: same as above — the pointer was created from a Rust value
-        // so converting it back to a reference is valid when alignment,
-        // initialization and aliasing/exclusivity rules are met.
-        let regs = unsafe { &mut *ptr };
-
-        // naive mapping for illustration
-        regs.intcfg = (regs.intcfg & !(0b11 << (pin * 2)))
-            | ((interrupt as u32) << (pin * 2));
+        /// Nothing to do
+        ()
     }
 
-    fn read(ptr: *const Self) -> u32 {
+    fn read(ptr: *const Self, pin: u32) -> Level {
         // SAFETY: the pointer originates from a Rust value; converting it to
         // a reference for reading is valid when the memory is initialized and
         // aligned. Use volatile accessors on real hardware as needed.
         let regs = unsafe { &*ptr };
-        regs.input
+        if (regs.input & (1 << pin)) != 0 {
+            Level::High
+        }
+        else {
+            Level::Low
+        }
     }
 
-    fn write(ptr: *mut Self, mask: u32) {
+    fn write(ptr: *mut Self, pin: u32, level: Level) {
         // SAFETY: see notes above — the pointer originates from a Rust value
         // and converting it to a mutable reference is valid when alignment,
         // initialization and exclusivity requirements are met.
         let regs = unsafe { &mut *ptr };
-        regs.output = mask;
+        let mask = match level {
+            Level::High => 1 << pin,
+            Level::Low => 0
+        };
+        regs.output |= mask;
     }
 
     fn interrupt_pending(ptr: *mut Self, pin: u32) -> bool {
@@ -83,7 +85,6 @@ impl Bank<MyGpioRegs> for MyBank {
             input: 0,
             output: 0,
             dir: 0,
-            intcfg: 0,
         };
 
         unsafe { &raw mut MOCK_REGS }
@@ -96,19 +97,19 @@ type Pin<const N: u32, D> = Io<MyBank, N, MyGpioRegs, D>;
 
 // Usage
 // At init, output should not be set
-let mut out = Pin::<3, Output<High>>::init();
+let mut out = Pin::<3, Output<PushPull>>::init();
 assert_eq!(unsafe { (*MyBank::addr()).output & (1 << 3) }, 0);
 
 // Activate 
 out.activate();
-assert_eq!(unsafe { (*MyBank::addr()).output & (1 << 3) }, 1 << 3);
+assert_eq!(unsafe { (*MyBank::addr()).output & (1 << 3) }, 8);
 
 
 // Assert that the output register bit for pin 3 was unset by the driver.
 // We read the mock register directly via the bank address returned by
 // `MyBank::addr()`; this mirrors what real hardware would contain.
 out.deactivate();
-assert_eq!(unsafe { (*MyBank::addr()).output & (1 << 3) }, 0);
+assert_eq!(unsafe { (*MyBank::addr()).output & (1 << 3) }, 8);
 
 // Prepare the input register for pin 4 and verify the typed API reads it.
 unsafe { (*MyBank::addr()).input = 1 << 4; }
@@ -117,7 +118,7 @@ unsafe { (*MyBank::addr()).input = 1 << 4; }
 let input = Pin::<4, Input>::init();
 let level = input.read();
 
-// Final check: ensure the typed API reports the pin as `High`.
+// Final check: ensure the typed API reports the pin as `PushPull`.
 // If this assertion fails, the example/driver did not set the mock input
 // register as expected.
 assert!(matches!(level, Level::High));

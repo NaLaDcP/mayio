@@ -66,7 +66,8 @@ pub trait Bank<R: register::GpioRegisters> {
 /// methods are kept simple and raw (u32 masks, pin indices) so they map
 /// directly onto common hardware register patterns.
 pub mod register {
-    use crate::{Interrupt, IoDir};
+
+    use crate::{Interrupt, IoDir, Level};
 
     /// Represents the hardware register interface for a GPIO bank.
     ///
@@ -83,11 +84,11 @@ pub mod register {
         /// Configure the interrupt mode for a single pin.
         fn set_interrupt(ptr: *mut Self, pin: u32, interrupt: Interrupt);
 
-        /// Read the input register(s) for the bank; returns a raw bitmask.
-        fn read(ptr: *const Self) -> u32;
+        /// Read the input register(s) for the bank; returns the level of `pin`.
+        fn read(ptr: *const Self, pin: u32) -> Level;
 
-        /// Write to the output register(s) using a bitmask.
-        fn write(ptr: *mut Self, mask: u32);
+        /// Write `level` to `pin` for the bank.
+        fn write(ptr: *mut Self, pin: u32, level: Level);
 
         /// Read whether an interrupt is pending for the given pin and acknoledge it.
         fn interrupt_pending(ptr: *mut Self, pin: u32) -> bool;
@@ -149,21 +150,13 @@ pub mod io {
         /// Read the current input state bitmask for the bank.
         #[inline]
         pub fn read(&self, pin: u32) -> Level {
-            if (<R as GpioRegisters>::read(self.registers) & (1 << pin)) != 0 {
-                Level::High
-            } else {
-                Level::Low
-            }
+            <R as GpioRegisters>::read(self.registers, pin)
         }
 
-        /// Write the provided `mask` to the bank output register(s).
+        /// Write `level` to `pin` for the bank.
         #[inline]
         pub fn write(&mut self, pin: u32, level: Level) {
-            let mask = match level {
-                Level::Low => u32::MAX ^ (1 << pin),
-                Level::High => 1 << pin,
-            };
-            <R as GpioRegisters>::write(self.registers, mask);
+            <R as GpioRegisters>::write(self.registers, pin, level);
         }
 
         /// Read whether an interrupt is pending for the given pin and acknowledge it.
