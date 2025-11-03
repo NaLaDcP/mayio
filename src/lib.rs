@@ -12,12 +12,12 @@ use core::{marker::PhantomData, ops::Not};
 pub use low::{Bank, io::Gpio, register::GpioRegisters};
 
 mod private {
-    use crate::InputMode;
+    use crate::OutputMode;
 
     // Sealed trait to prevent external implementations of `Direction`.
     pub trait Sealed {}
     impl Sealed for super::Input {}
-    impl<Mode: InputMode> Sealed for super::Output<Mode> {}
+    impl<Mode: OutputMode> Sealed for super::Output<Mode> {}
     impl Sealed for super::PushPull {}
     impl Sealed for super::OpenDrain {}
 }
@@ -100,7 +100,7 @@ where
 /// output marker types. The `Output<S>` marker uses this to determine the
 /// level to drive when the pin is initialized.
 #[doc(hidden)]
-pub trait InputMode: Sealed {
+pub trait OutputMode: Sealed {
     fn active_state() -> Level;
 }
 
@@ -116,7 +116,7 @@ pub struct Input;
 /// Use as `Output<PushPull>` to request that the pin be driven high when
 /// active.
 pub struct PushPull;
-impl InputMode for PushPull {
+impl OutputMode for PushPull {
     fn active_state() -> Level {
         Level::High
     }
@@ -127,7 +127,7 @@ impl InputMode for PushPull {
 /// Use as `Output<OpenDrain>` to request that the pin be driven low when
 /// active.
 pub struct OpenDrain;
-impl InputMode for OpenDrain {
+impl OutputMode for OpenDrain {
     fn active_state() -> Level {
         Level::Low
     }
@@ -136,9 +136,9 @@ impl InputMode for OpenDrain {
 /// Marker type for an output pin.
 ///
 /// `Output<S>` carries a phantom type parameter `S` which implements
-/// `InputMode` and selects the level the pin should assume when
+/// `OutputMode` and selects the level the pin should assume when
 /// initialized. Example: `Io::<3, MyBank, MyRegs, Output<Active>>`.
-pub struct Output<Mode: InputMode> {
+pub struct Output<Mode: OutputMode> {
     default: PhantomData<fn() -> Mode>,
 }
 
@@ -152,7 +152,7 @@ impl Direction for Input {
     }
 }
 
-impl<Mode: InputMode> Direction for Output<Mode> {
+impl<Mode: OutputMode> Direction for Output<Mode> {
     fn init<R>(gpio: &mut Gpio<R>, pin: u32)
     where
         R: GpioRegisters,
@@ -208,7 +208,7 @@ where
     }
 }
 
-impl<B, const N: u32, R, Mode: InputMode> Io<B, N, R, Output<Mode>>
+impl<B, const N: u32, R, Mode: OutputMode> Io<B, N, R, Output<Mode>>
 where
     B: Bank<R>,
     R: GpioRegisters,

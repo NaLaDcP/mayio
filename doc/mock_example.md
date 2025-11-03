@@ -59,11 +59,11 @@ unsafe impl GpioRegisters for MyGpioRegs {
         // and converting it to a mutable reference is valid when alignment,
         // initialization and exclusivity requirements are met.
         let regs = unsafe { &mut *ptr };
-        let mask = match level {
-            Level::High => 1 << pin,
-            Level::Low => 0
-        };
-        regs.output |= mask;
+        let output = regs.output;
+         match level {
+            Level::High => regs.output = output | (1 << pin),
+            Level::Low => regs.output = output & (u32::MAX ^ (1 << pin))
+        }
     }
 
     fn interrupt_pending(ptr: *mut Self, pin: u32) -> bool {
@@ -109,7 +109,7 @@ assert_eq!(unsafe { (*MyBank::addr()).output & (1 << 3) }, 8);
 // We read the mock register directly via the bank address returned by
 // `MyBank::addr()`; this mirrors what real hardware would contain.
 out.deactivate();
-assert_eq!(unsafe { (*MyBank::addr()).output & (1 << 3) }, 8);
+assert_eq!(unsafe { (*MyBank::addr()).output & (1 << 3) }, 0);
 
 // Prepare the input register for pin 4 and verify the typed API reads it.
 unsafe { (*MyBank::addr()).input = 1 << 4; }
